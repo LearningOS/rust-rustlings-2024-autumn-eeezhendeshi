@@ -5,6 +5,7 @@
 
 
 const NUMBER: i32 = 3;
+const STRING: &str="kak";
 fn main() {
-    println!("Number {}", NUMBER);
+    println!("Number {},{}", NUMBER,STRING);
 }
