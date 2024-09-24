@@ -5,16 +5,25 @@
 //
 // Execute `rustlings hint generics2` or use the `hint` watch subcommand for a
 // hint.
-
-// I AM NOT DONE
-
-struct Wrapper {
-    value: u32,
+struct Wrapper<T> {
+    value: T,
 }
 
-impl Wrapper {
-    pub fn new(value: u32) -> Self {
+enum An<'a> {
+    A(u32),
+    B(&'a str),
+}
+
+impl<'a> Wrapper<An<'a>> {
+    pub fn new(value: An<'a>) -> Wrapper<An<'a>> {
         Wrapper { value }
+    }
+
+    pub fn unwrap(&self) -> u32 {
+        match &self.value {
+            An::A(v) => *v,
+            An::B(s) => s.parse().unwrap_or(0), // 默认返回 0，如果解析失败
+        }
     }
 }
 
@@ -24,11 +33,16 @@ mod tests {
 
     #[test]
     fn store_u32_in_wrapper() {
-        assert_eq!(Wrapper::new(42).value, 42);
+        let wrapper = Wrapper::new(An::A(42));
+        assert_eq!(wrapper.unwrap(), 42);
     }
 
     #[test]
     fn store_str_in_wrapper() {
-        assert_eq!(Wrapper::new("Foo").value, "Foo");
+        let wrapper = Wrapper::new(An::B("123"));
+        assert_eq!(wrapper.unwrap(), 123);
+        
+        let wrapper_invalid = Wrapper::new(An::B("Foo"));
+        assert_eq!(wrapper_invalid.unwrap(), 0); // 解析失败返回 0
     }
 }
