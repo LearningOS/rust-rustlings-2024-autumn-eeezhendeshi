@@ -7,7 +7,6 @@
 // Execute `rustlings hint traits4` or use the `hint` watch subcommand for a
 // hint.
 
-// I AM NOT DONE
 
 pub trait Licensed {
     fn licensing_info(&self) -> String {
@@ -23,7 +22,8 @@ impl Licensed for SomeSoftware {}
 impl Licensed for OtherSoftware {}
 
 // YOU MAY ONLY CHANGE THE NEXT LINE
-fn compare_license_types(software: ??, software_two: ??) -> bool {
+//&dyn Licensed 表示这是一个动态分发的 trait 对象，允许在运行时传递任何实现了 Licensed trait 的类型。
+fn compare_license_types<T: Licensed,W:Licensed>(software: T, software_two: W) -> bool {
     software.licensing_info() == software_two.licensing_info()
 }
 
@@ -44,6 +44,6 @@ mod tests {
         let some_software = SomeSoftware {};
         let other_software = OtherSoftware {};
 
-        assert!(compare_license_types(other_software, some_software));
+        assert!(compare_license_types(other_software,some_software));
     }
 }
