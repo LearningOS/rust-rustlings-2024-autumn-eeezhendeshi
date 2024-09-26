@@ -1,84 +1,205 @@
 /*
-	graph
-	This problem requires you to implement a basic graph functio
+	heap
+	This question requires you to implement a binary heap function
 */
-// I AM NOT DONE
 
-use std::collections::{HashMap, HashSet};
-use std::fmt;
-#[derive(Debug, Clone)]
-pub struct NodeNotInGraph;
-impl fmt::Display for NodeNotInGraph {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "accessing a node that is not in the graph")
-    }
+
+use std::cmp::Ord;
+use std::default::Default;
+
+pub struct Heap<T>
+where
+    T: Default,
+{
+    count: usize,
+    items: Vec<T>,
+    comparator: fn(&T, &T) -> bool,
 }
-pub struct UndirectedGraph {
-    adjacency_table: HashMap<String, Vec<(String, i32)>>,
-}
-impl Graph for UndirectedGraph {
-    fn new() -> UndirectedGraph {
-        UndirectedGraph {
-            adjacency_table: HashMap::new(),
+
+impl<T> Heap<T>
+where
+    T: Default,
+{
+    pub fn new(comparator: fn(&T, &T) -> bool) -> Self {
+        Self {
+            count: 0,
+            items: vec![T::default()],
+            comparator,
         }
     }
-    fn adjacency_table_mutable(&mut self) -> &mut HashMap<String, Vec<(String, i32)>> {
-        &mut self.adjacency_table
+
+    pub fn len(&self) -> usize {
+        self.count
     }
-    fn adjacency_table(&self) -> &HashMap<String, Vec<(String, i32)>> {
-        &self.adjacency_table
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
-    fn add_edge(&mut self, edge: (&str, &str, i32)) {
-        //TODO
-    }
-}
-pub trait Graph {
-    fn new() -> Self;
-    fn adjacency_table_mutable(&mut self) -> &mut HashMap<String, Vec<(String, i32)>>;
-    fn adjacency_table(&self) -> &HashMap<String, Vec<(String, i32)>>;
-    fn add_node(&mut self, node: &str) -> bool {
-        //TODO
-		true
-    }
-    fn add_edge(&mut self, edge: (&str, &str, i32)) {
-        //TODO
-    }
-    fn contains(&self, node: &str) -> bool {
-        self.adjacency_table().get(node).is_some()
-    }
-    fn nodes(&self) -> HashSet<&String> {
-        self.adjacency_table().keys().collect()
-    }
-    fn edges(&self) -> Vec<(&String, &String, i32)> {
-        let mut edges = Vec::new();
-        for (from_node, from_node_neighbours) in self.adjacency_table() {
-            for (to_node, weight) in from_node_neighbours {
-                edges.push((from_node, to_node, *weight));
+
+    pub fn add(&mut self, value: T) {
+        self.items.push(value);
+        self.count += 1;
+        let mut idx = self.count;
+        while idx > 1 {
+            let parent_idx = self.parent_idx(idx); // 提前计算父节点索引
+            if (self.comparator)(&self.items[idx], &self.items[parent_idx]) {
+                self.items.swap(idx, parent_idx);  // 使用预存的父节点索引进行swap
+                idx = parent_idx;
+            } else {
+                break;
             }
         }
-        edges
+    }
+
+    fn parent_idx(&self, idx: usize) -> usize {
+        idx / 2
+    }
+
+    fn children_present(&self, idx: usize) -> bool {
+        self.left_child_idx(idx) <= self.count
+    }
+
+    fn left_child_idx(&self, idx: usize) -> usize {
+        idx * 2
+    }
+
+    fn right_child_idx(&self, idx: usize) -> usize {
+        self.left_child_idx(idx) + 1
+    }
+
+    fn smallest_child_idx(&self, idx: usize) -> usize {
+        //TODO
+        let left_idx = self.left_child_idx(idx);
+        let right_idx = self.right_child_idx(idx);
+        if right_idx <= self.count {
+            if (self.comparator)(&self.items[right_idx], &self.items[left_idx]) {
+                right_idx
+            } else {
+                left_idx
+            }
+        } else if left_idx <= self.count {
+            left_idx
+        } else {
+            idx  // 当没有子节点时，返回自身的索引（不过通常不会用到）
+        }
     }
 }
-#[cfg(test)]
-mod test_undirected_graph {
-    use super::Graph;
-    use super::UndirectedGraph;
-    #[test]
-    fn test_add_edge() {
-        let mut graph = UndirectedGraph::new();
-        graph.add_edge(("a", "b", 5));
-        graph.add_edge(("b", "c", 10));
-        graph.add_edge(("c", "a", 7));
-        let expected_edges = [
-            (&String::from("a"), &String::from("b"), 5),
-            (&String::from("b"), &String::from("a"), 5),
-            (&String::from("c"), &String::from("a"), 7),
-            (&String::from("a"), &String::from("c"), 7),
-            (&String::from("b"), &String::from("c"), 10),
-            (&String::from("c"), &String::from("b"), 10),
-        ];
-        for edge in expected_edges.iter() {
-            assert_eq!(graph.edges().contains(edge), true);
+
+impl<T> Heap<T>
+where
+    T: Default + Ord,
+{
+    /// Create a new MinHeap
+    pub fn new_min() -> Self {
+        Self::new(|a, b| a < b)
+    }
+
+    /// Create a new MaxHeap
+    pub fn new_max() -> Self {
+        Self::new(|a, b| a > b)
+    }
+}
+
+impl<T> Iterator for Heap<T>
+where
+    T: Default,
+{
+    type Item = T;
+
+    fn next(&mut self) -> Option<T> {
+        //TODO
+        if self.count == 0 {
+            return None;
         }
+
+        // 弹出堆顶元素，这是最小或最大元素
+        let result = self.items.swap_remove(1);
+        self.count -= 1;
+
+        if self.count > 0 {
+            // 从数组末尾取出最后一个元素，并将其重新插入到堆的顶部
+            let last_item = self.items.pop().unwrap();
+            if !self.items.is_empty() {
+                self.items.insert(1, last_item);
+            }
+
+            // 重新调整堆
+            let mut idx = 1;
+            while self.children_present(idx) {
+                let swap_idx = self.smallest_child_idx(idx);
+                if (self.comparator)(&self.items[swap_idx], &self.items[idx]) {
+                    self.items.swap(idx, swap_idx);
+                    idx = swap_idx;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        Some(result)
+    }
+}
+
+pub struct MinHeap;
+
+impl MinHeap {
+    #[allow(clippy::new_ret_no_self)]
+    pub fn new<T>() -> Heap<T>
+    where
+        T: Default + Ord,
+    {
+        Heap::new(|a, b| a < b)
+    }
+}
+
+pub struct MaxHeap;
+
+impl MaxHeap {
+    #[allow(clippy::new_ret_no_self)]
+    pub fn new<T>() -> Heap<T>
+    where
+        T: Default + Ord,
+    {
+        Heap::new(|a, b| a > b)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_empty_heap() {
+        let mut heap = MaxHeap::new::<i32>();
+        assert_eq!(heap.next(), None);
+    }
+
+    #[test]
+    fn test_min_heap() {
+        let mut heap = MinHeap::new();
+        heap.add(4);
+        heap.add(2);
+        heap.add(9);
+        heap.add(11);
+        assert_eq!(heap.len(), 4);
+        assert_eq!(heap.next(), Some(2));
+        assert_eq!(heap.next(), Some(4));
+        assert_eq!(heap.next(), Some(9));
+        heap.add(1);
+        assert_eq!(heap.next(), Some(1));
+    }
+
+    #[test]
+    fn test_max_heap() {
+        let mut heap = MaxHeap::new();
+        heap.add(4);
+        heap.add(2);
+        heap.add(9);
+        heap.add(11);
+        assert_eq!(heap.len(), 4);
+        assert_eq!(heap.next(), Some(11));
+        assert_eq!(heap.next(), Some(9));
+        assert_eq!(heap.next(), Some(4));
+        heap.add(1);
+        assert_eq!(heap.next(), Some(2));
     }
 }
